@@ -52,20 +52,25 @@
     #section-active { margin-bottom: 60px; }
     #tombola-card {
       background: var(--gris); border: 1px solid #333;
-      border-radius: 8px; overflow: hidden; box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+      border-radius: 10px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.6);
     }
+
+    /* Titre + badge */
     #tombola-header {
-      padding: 25px; border-bottom: 1px solid #333;
-      display: flex; justify-content: space-between; align-items: flex-start;
-      flex-wrap: wrap; gap: 15px;
+      padding: 30px 35px 20px; border-bottom: 1px solid #2a2a2a;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 14px;
     }
     #tombola-titre {
-      font-family: 'Bebas Neue', cursive; font-size: clamp(1.8rem, 4vw, 3rem);
-      color: var(--blanc); letter-spacing: 2px;
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(2.4rem, 5vw, 4.5rem);
+      color: var(--blanc); letter-spacing: 4px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      line-height: 1;
     }
     .badge {
-      padding: 6px 14px; border-radius: 4px; font-weight: 700;
-      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+      padding: 8px 18px; border-radius: 5px; font-weight: 700;
+      font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap;
     }
     .badge-attente { background: #2c3e50; color: #95a5a6; border: 1px solid #95a5a6; }
     .badge-cours {
@@ -75,56 +80,78 @@
     .badge-terminee { background: #1a1a1a; color: #555; border: 1px solid #555; }
     @keyframes pulse-badge {
       0%, 100% { box-shadow: none; }
-      50% { box-shadow: 0 0 10px rgba(39,174,96,0.5); }
+      50% { box-shadow: 0 0 12px rgba(39,174,96,0.5); }
     }
-    #tombola-body { display: grid; grid-template-columns: 1fr 1fr; }
-    #tombola-info { padding: 25px; border-right: 1px solid #333; }
-    #tombola-desc { color: #bbb; line-height: 1.6; margin-bottom: 14px; font-size: 1rem; }
-    #tombola-meta { display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+    /* Description */
+    #tombola-desc-bloc {
+      padding: 22px 35px 0;
+    }
+    #tombola-desc {
+      color: #ccc; line-height: 1.8; font-size: 1.15rem; font-weight: 500;
+    }
+
+    /* Chips modalités */
+    #tombola-meta {
+      display: none; flex-wrap: wrap; gap: 12px;
+      padding: 18px 35px;
+      border-bottom: 1px solid #2a2a2a;
+    }
     .meta-chip {
-      background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3);
-      border-radius: 4px; padding: 7px 14px;
-      font-family: 'Bebas Neue', cursive; font-size: 1rem; color: var(--or); letter-spacing: 2px;
+      background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 6px; padding: 10px 22px;
+      font-family: 'Bebas Neue', cursive; font-size: 1.2rem;
+      color: var(--or); letter-spacing: 2px;
+    }
+
+    /* Corps : image + participants côte à côte */
+    #tombola-body { display: grid; grid-template-columns: 1fr 1fr; }
+    #tombola-image-bloc {
+      padding: 25px 25px 25px 35px;
+      border-right: 1px solid #2a2a2a;
+      display: flex; flex-direction: column; gap: 16px; justify-content: center;
     }
     #tombola-lot-img {
-      width: 100%; max-height: 250px; object-fit: contain;
-      border-radius: 4px; border: 1px solid #444; display: none; background: #111;
+      width: 100%; max-height: 300px; object-fit: contain;
+      border-radius: 6px; border: 1px solid #3a3a3a; display: none; background: #111;
     }
     #countdown-wrapper {
-      margin-top: 20px; padding: 15px;
-      background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2);
-      border-radius: 4px; text-align: center; display: none;
+      padding: 18px; background: rgba(201,168,76,0.05);
+      border: 1px solid rgba(201,168,76,0.2); border-radius: 6px;
+      text-align: center; display: none;
     }
     #countdown-label { font-size: 0.75rem; letter-spacing: 2px; color: var(--or); margin-bottom: 8px; }
-    #countdown-display { font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--or); letter-spacing: 3px; }
+    #countdown-display { font-family: 'Bebas Neue', cursive; font-size: 2.8rem; color: var(--or); letter-spacing: 4px; }
 
-    /* ===== PARTICIPANTS ===== */
-    #tombola-participants { padding: 25px; }
+    /* Participants */
+    #tombola-participants { padding: 25px 35px 25px 25px; }
     #participants-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;
     }
-    #participants-titre { font-family: 'Bebas Neue', cursive; font-size: 1.2rem; letter-spacing: 2px; color: var(--or); }
+    #participants-titre {
+      font-family: 'Bebas Neue', cursive; font-size: 1.4rem; letter-spacing: 3px; color: var(--or);
+    }
     #compteur-tickets {
       background: rgba(201,168,76,0.1); border: 1px solid var(--or);
-      color: var(--or); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+      color: var(--or); padding: 5px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 700;
     }
     #liste-participants {
-      list-style: none; max-height: 300px; overflow-y: auto;
+      list-style: none; max-height: 340px; overflow-y: auto;
       scrollbar-width: thin; scrollbar-color: var(--or) #111;
     }
     #liste-participants::-webkit-scrollbar { width: 4px; }
     #liste-participants::-webkit-scrollbar-track { background: #111; }
     #liste-participants::-webkit-scrollbar-thumb { background: var(--or); border-radius: 2px; }
     .participant-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 10px; border-bottom: 1px solid #2a2a2a; animation: fadeIn 0.3s ease;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 8px; border-bottom: 1px solid #2a2a2a; animation: fadeIn 0.3s ease;
     }
-    .participant-num { color: var(--or); font-weight: 700; font-size: 0.8rem; min-width: 40px; }
-    .participant-nom { flex: 1; font-size: 1rem; }
+    .participant-num { color: var(--or); font-weight: 700; font-size: 0.85rem; min-width: 42px; }
+    .participant-nom { flex: 1; font-size: 1.05rem; font-weight: 500; }
     @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-    #no-tombola { text-align: center; padding: 80px 20px; color: #555; }
-    #no-tombola h2 { font-family: 'Bebas Neue', cursive; font-size: 2rem; letter-spacing: 3px; margin-bottom: 10px; }
+    #no-tombola { text-align: center; padding: 90px 20px; color: #555; }
+    #no-tombola h2 { font-family: 'Bebas Neue', cursive; font-size: 2.2rem; letter-spacing: 3px; margin-bottom: 12px; }
 
     /* ===== ROULEAU ===== */
     #tirage-overlay {
@@ -215,7 +242,11 @@
 
     @media (max-width: 768px) {
       #tombola-body { grid-template-columns: 1fr; }
-      #tombola-info { border-right: none; border-bottom: 1px solid #333; }
+      #tombola-image-bloc { border-right: none; border-bottom: 1px solid #2a2a2a; padding: 20px 20px; }
+      #tombola-participants { padding: 20px; }
+      #tombola-header { padding: 20px; }
+      #tombola-desc-bloc { padding: 16px 20px 0; }
+      #tombola-meta { padding: 14px 20px; }
     }
   </style>
 </head>
@@ -262,10 +293,12 @@
           <div id="tombola-titre">—</div>
           <div id="tombola-statut" class="badge badge-attente">EN ATTENTE</div>
         </div>
+        <div id="tombola-desc-bloc">
+          <p id="tombola-desc"></p>
+        </div>
+        <div id="tombola-meta"></div>
         <div id="tombola-body">
-          <div id="tombola-info">
-            <p id="tombola-desc"></p>
-            <div id="tombola-meta"></div>
+          <div id="tombola-image-bloc">
             <img id="tombola-lot-img" src="" alt="Lot">
             <div id="countdown-wrapper">
               <div id="countdown-label">⏱ FIN DU TIRAGE DANS</div>
@@ -292,7 +325,12 @@
   </section>
 </main>
 
-<footer>TOMBOLA RP — ARMA 3</footer>
+<footer>
+  TOMBOLA RP — ARMA 3
+  <span style="display:block; margin-top:6px; font-size:0.65rem; color:#2a2a2a; letter-spacing:3px;">
+    SYSTÈME CONÇU PAR LARRY CALL
+  </span>
+</footer>
 
 <script>
 // ===== ÉTAT LOCAL =====

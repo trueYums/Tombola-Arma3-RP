@@ -707,7 +707,7 @@ document.getElementById('btn-creer').addEventListener('click', () => {
     participants: {},
   };
 
-  LS.setActive(tombola);
+  sauvegarderActive(tombola);
   toast('Tombola créée !');
 
   // Reset formulaire
@@ -767,7 +767,7 @@ document.getElementById('btn-sauvegarder-edition').addEventListener('click', () 
   active.titre       = document.getElementById('edit-titre').value.trim();
   active.description = document.getElementById('edit-desc').value.trim();
   if (lotBase64EditPending) active.lot_image_base64 = lotBase64EditPending;
-  LS.setActive(active);
+  sauvegarderActive(active);
   toast('Informations mises à jour !');
   document.getElementById('section-edition').style.display = 'none';
   document.getElementById('section-gestion').style.display = 'block';
@@ -853,11 +853,41 @@ document.getElementById('confirm-cancel').addEventListener('click', () => {
   confirmCallback = null;
 });
 
-// ===== UTILITAIRE : Fichier → Base64 =====
+// ===== UTILITAIRE : Fichier → Base64 compressé (Canvas) =====
+// Redimensionne l'image à max 1200px et la compresse en JPEG 0.8
+// pour éviter de dépasser la limite localStorage (~5MB)
 function fileToBase64(file, callback) {
+  const MAX_PX = 1200;
+  const QUALITE = 0.80;
   const reader = new FileReader();
-  reader.onload = e => callback(e.target.result);
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > MAX_PX || h > MAX_PX) {
+        if (w >= h) { h = Math.round(h * MAX_PX / w); w = MAX_PX; }
+        else        { w = Math.round(w * MAX_PX / h); h = MAX_PX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', QUALITE));
+    };
+    img.src = e.target.result;
+  };
   reader.readAsDataURL(file);
+}
+
+// ===== SAUVEGARDE ACTIVE AVEC GESTION QUOTA =====
+function sauvegarderActive(data) {
+  try {
+    LS.setActive(data);
+  } catch (e) {
+    // localStorage plein → retry sans image
+    toast('Image trop volumineuse. Essayez une image plus petite.', false);
+    const sanImg = { ...data, lot_image_base64: null };
+    try { LS.setActive(sanImg); } catch (e2) { toast('Stockage local insuffisant.', false); }
+  }
 }
 </script>
 </body>
