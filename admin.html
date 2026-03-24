@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Tombola RP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --noir: #0a0a0a; --gris: #1e1e1e; --or: #c9a84c;
+      --blanc: #e8e8e8; --rouge: #c0392b; --vert: #27ae60; --bleu: #2980b9;
+    }
+    body {
+      background-color: var(--noir); color: var(--blanc);
+      font-family: 'Rajdhani', sans-serif; font-size: 15px; min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ===== AUTH ===== */
+    #auth-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #auth-box {
+      background: var(--gris); border: 1px solid var(--or); border-radius: 10px;
+      padding: 50px 40px; width: min(420px, 90vw); text-align: center;
+      box-shadow: 0 0 40px rgba(201,168,76,0.2);
+    }
+    #auth-titre { font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--or); letter-spacing: 4px; margin-bottom: 8px; }
+    #auth-sous { color: #666; font-size: 0.9rem; margin-bottom: 30px; letter-spacing: 1px; }
+    #auth-input {
+      width: 100%; padding: 14px 16px; background: #111; border: 1px solid #444;
+      border-radius: 6px; color: var(--blanc); font-family: 'Rajdhani', sans-serif;
+      font-size: 1.1rem; text-align: center; letter-spacing: 4px; margin-bottom: 15px; outline: none;
+    }
+    #auth-input:focus { border-color: var(--or); }
+    #auth-btn {
+      width: 100%; padding: 14px; background: var(--or); color: #000;
+      border: none; border-radius: 6px; font-family: 'Bebas Neue', cursive;
+      font-size: 1.3rem; letter-spacing: 3px; cursor: pointer;
+    }
+    #auth-btn:hover { background: #e0bb5a; }
+    #auth-erreur { color: var(--rouge); font-size: 0.9rem; margin-top: 12px; display: none; }
+
+    /* ===== LAYOUT ===== */
+    #admin-wrap { display: none; }
+    header {
+      background: linear-gradient(180deg, #111 0%, var(--gris) 100%);
+      border-bottom: 2px solid var(--or); padding: 16px 30px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    #admin-titre { font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--or); letter-spacing: 4px; }
+    #btn-deconnexion {
+      padding: 8px 20px; background: transparent; border: 1px solid #555;
+      color: #888; border-radius: 4px; cursor: pointer; font-family: 'Rajdhani', sans-serif;
+      font-size: 0.85rem; letter-spacing: 1px;
+    }
+    #btn-deconnexion:hover { border-color: var(--rouge); color: var(--rouge); }
+
+    /* Grid 2 colonnes (desktop) */
+    #admin-grid {
+      max-width: 1300px; margin: 30px auto; padding: 0 20px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 25px;
+    }
+    @media (max-width: 1024px) { #admin-grid { grid-template-columns: 1fr; } }
+
+    /* ===== PANNEAUX ===== */
+    .panel { background: var(--gris); border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; }
+    .panel-header {
+      padding: 18px 22px; border-bottom: 1px solid #2a2a2a;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .panel-titre { font-family: 'Bebas Neue', cursive; font-size: 1.3rem; color: var(--or); letter-spacing: 3px; }
+    .panel-body { padding: 22px; }
+
+    /* ===== FORMULAIRES ===== */
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.8rem; letter-spacing: 2px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+    input[type="text"], input[type="password"], input[type="datetime-local"], textarea {
+      width: 100%; padding: 10px 14px; background: #111; border: 1px solid #333;
+      border-radius: 5px; color: var(--blanc); font-family: 'Rajdhani', sans-serif; font-size: 1rem; outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--or); }
+    textarea { resize: vertical; min-height: 80px; }
+    input[type="file"] { display: none; }
+    .file-label {
+      display: inline-block; padding: 9px 16px; background: #2a2a2a; border: 1px solid #444;
+      border-radius: 5px; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .file-label:hover { border-color: var(--or); }
+    .preview-img { max-width: 120px; max-height: 80px; object-fit: contain; border: 1px solid #333; border-radius: 4px; display: none; margin-top: 6px; }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; }
+    input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--or); cursor: pointer; }
+
+    /* ===== BOUTONS ===== */
+    .btn {
+      padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;
+      font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 2px;
+      display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.2s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-or    { background: var(--or);  color: #000; }
+    .btn-or:hover:not(:disabled)    { background: #e0bb5a; }
+    .btn-rouge { background: var(--rouge); color: #fff; }
+    .btn-rouge:hover:not(:disabled) { background: #a93226; }
+    .btn-vert  { background: var(--vert); color: #fff; }
+    .btn-vert:hover:not(:disabled)  { background: #229954; }
+    .btn-gris  { background: #333; color: #aaa; border: 1px solid #444; }
+    .btn-gris:hover:not(:disabled)  { border-color: #666; color: var(--blanc); }
+    .btn-full  { width: 100%; justify-content: center; padding: 14px; font-size: 1.1rem; }
+
+    /* ===== PARTICIPANTS ===== */
+    #admin-participants-liste {
+      list-style: none; max-height: 320px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: var(--or) #111; margin-bottom: 15px;
+    }
+    #admin-participants-liste::-webkit-scrollbar { width: 4px; }
+    #admin-participants-liste::-webkit-scrollbar-track { background: #111; }
+    #admin-participants-liste::-webkit-scrollbar-thumb { background: var(--or); border-radius: 2px; }
+    .adm-participant {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-bottom: 1px solid #2a2a2a; animation: fadeIn 0.2s ease;
+    }
+    .adm-part-num { color: var(--or); font-size: 0.8rem; font-weight: 700; min-width: 38px; }
+    .adm-part-nom { flex: 1; font-size: 1rem; cursor: pointer; }
+    .adm-part-nom:hover { color: var(--or); }
+    .adm-part-nom[contenteditable="true"] { outline: none; border-bottom: 1px solid var(--or); color: var(--or); }
+    .adm-part-del {
+      background: none; border: none; color: #555; cursor: pointer;
+      font-size: 1rem; padding: 2px 6px; border-radius: 3px;
+    }
+    .adm-part-del:hover { color: var(--rouge); background: rgba(192,57,43,0.1); }
+    .ajouter-row { display: flex; gap: 8px; }
+    .ajouter-row input { flex: 1; }
+
+    /* ===== HISTORIQUE ===== */
+    .hist-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid #2a2a2a; flex-wrap: wrap;
+    }
+    .hist-info { flex: 1; min-width: 150px; }
+    .hist-titre { font-weight: 700; font-size: 0.95rem; }
+    .hist-meta { font-size: 0.8rem; color: #666; margin-top: 2px; }
+
+    /* ===== MODALE CONFIRMATION ===== */
+    #confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000;
+      display: none; align-items: center; justify-content: center;
+    }
+    #confirm-box {
+      background: var(--gris); border: 1px solid var(--rouge); border-radius: 8px;
+      padding: 35px; width: min(380px, 90vw); text-align: center;
+    }
+    #confirm-msg { font-size: 1rem; margin-bottom: 25px; line-height: 1.5; }
+    #confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ===== GAGNANT POST-TIRAGE ===== */
+    #gagnant-post {
+      text-align: center; padding: 20px;
+      background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 6px; margin-bottom: 15px; display: none;
+    }
+    #gagnant-post-nom { font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--or); letter-spacing: 3px; display: block; margin-top: 5px; }
+
+    /* ===== BADGES ===== */
+    .badge-small { padding: 3px 10px; border-radius: 3px; font-size: 0.7rem; letter-spacing: 2px; font-weight: 700; }
+    .badge-cours-s { background: rgba(39,174,96,0.15); color: var(--vert); border: 1px solid var(--vert); }
+    .badge-att-s   { background: #2c3e50; color: #95a5a6; border: 1px solid #95a5a6; }
+    .badge-ter-s   { background: #1a1a1a; color: #555; border: 1px solid #555; }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed; bottom: 30px; right: 30px; z-index: 8000;
+      background: var(--gris); border: 1px solid var(--or); border-radius: 6px;
+      padding: 14px 22px; font-size: 0.9rem; letter-spacing: 1px;
+      transform: translateY(80px); opacity: 0; transition: all 0.3s ease; pointer-events: none;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    hr { border: none; border-top: 1px solid #2a2a2a; margin: 20px 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<!-- Auth -->
+<div id="auth-overlay">
+  <div id="auth-box">
+    <div id="auth-titre">ACCÈS ADMIN</div>
+    <div id="auth-sous">TOMBOLA RP — ARMA 3</div>
+    <input id="auth-input" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button id="auth-btn">CONNEXION</button>
+    <div id="auth-erreur">Mot de passe incorrect.</div>
+  </div>
+</div>
+
+<!-- Confirmation -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-msg"></div>
+    <div id="confirm-actions">
+      <button id="confirm-ok"     class="btn btn-rouge">CONFIRMER</button>
+      <button id="confirm-cancel" class="btn btn-gris">ANNULER</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Interface principale -->
+<div id="admin-wrap">
+  <header>
+    <div id="admin-titre">⚙ PANNEAU ADMIN</div>
+    <button id="btn-deconnexion">DÉCONNEXION</button>
+  </header>
+
+  <div id="admin-grid">
+
+    <!-- Colonne gauche -->
+    <div style="display:flex; flex-direction:column; gap:25px;">
+
+      <!-- Paramètres entreprise -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-titre">PARAMÈTRES ENTREPRISE</div></div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Nom de l'entreprise</label>
+            <input id="cfg-nom" type="text" placeholder="Ex : Mafia Inc.">
+          </div>
+          <div class="form-group">
+            <label>Logo (PNG/JPG/WEBP)</label>
+            <label class="file-label" for="cfg-logo-file">📁 Choisir un logo</label>
+            <input id="cfg-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
+            <img id="cfg-logo-preview" class="preview-img" src="" alt="Preview">
+          </div>
+          <div class="form-group">
+            <label>Adresse</label>
+            <input id="cfg-adresse" type="text" placeholder="Ex : Zone industrielle nord">
+          </div>
+          <div class="form-group">
+            <label>Téléphone</label>
+            <input id="cfg-tel" type="text" placeholder="Ex : 0612345678">
+          </div>
+          <div class="form-group">
+            <label>Fréquence radio</label>
+            <input id="cfg-radio" type="text" placeholder="Ex : 104.7 MHz">
+          </div>
+          <div class="form-group">
+            <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+            <input id="cfg-mdp" type="password" placeholder="Nouveau mot de passe">
+          </div>
+          <button id="btn-sauvegarder-cfg" class="btn btn-or">💾 SAUVEGARDER</button>
+        </div>
+      </div>
+
+      <!-- Historique -->
+      <div class="panel">
+        <div class="panel-header"><div class="panel-titre">HISTORIQUE</div></div>
+        <div class="panel-body">
+          <div id="historique-liste"><p style="color:#555;">Aucune tombola archivée.</p></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Colonne droite -->
+    <div style="display:flex; flex-direction:column; gap:25px;">
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-titre">TOMBOLA ACTIVE</div>
+          <span id="badge-statut-header"></span>
+        </div>
+        <div class="panel-body">
+
+          <!-- Création (aucune tombola active) -->
+          <div id="section-creation">
+            <div class="form-group">
+              <label>Titre de la tombola</label>
+              <input id="new-titre" type="text" placeholder="Ex : Grand Tirage du Mois">
+            </div>
+            <div class="form-group">
+              <label>Description du lot</label>
+              <textarea id="new-desc" placeholder="Décrivez le lot mis en jeu…"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Image du lot (PNG/JPG/WEBP)</label>
+              <label class="file-label" for="new-lot-file">📁 Choisir une image</label>
+              <input id="new-lot-file" type="file" accept="image/png,image/jpeg,image/webp">
+              <img id="new-lot-preview" class="preview-img" src="" alt="Preview">
+            </div>
+            <div class="form-group">
+              <div class="checkbox-group">
+                <input id="new-countdown" type="checkbox">
+                <label for="new-countdown" style="margin:0; color:var(--blanc); letter-spacing:0; text-transform:none; font-size:1rem;">Activer un compte à rebours</label>
+              </div>
+            </div>
+            <div class="form-group" id="group-datetime" style="display:none;">
+              <label>Date et heure de fin</label>
+              <input id="new-datefin" type="datetime-local">
+            </div>
+            <button id="btn-creer" class="btn btn-or btn-full">⚡ CRÉER LA TOMBOLA</button>
+          </div>
+
+          <!-- Gestion tombola existante -->
+          <div id="section-gestion" style="display:none;">
+
+            <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
+              <div id="gestion-titre" style="font-family:'Bebas Neue',cursive; font-size:1.6rem; letter-spacing:2px;"></div>
+            </div>
+            <div id="gestion-desc" style="color:#888; font-size:0.9rem; margin-bottom:12px;"></div>
+
+            <!-- Gagnant post-tirage -->
+            <div id="gagnant-post">
+              <span style="color:#888; font-size:0.8rem; letter-spacing:2px;">GAGNANT</span>
+              <span id="gagnant-post-nom"></span>
+              <button id="btn-archiver" class="btn btn-vert" style="margin-top:12px;">✅ ARCHIVER ET TERMINER</button>
+            </div>
+
+            <hr>
+
+            <!-- Participants -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span style="font-family:'Bebas Neue',cursive; font-size:1.1rem; color:var(--or); letter-spacing:2px;">PARTICIPANTS</span>
+              <span id="adm-compteur" style="background:rgba(201,168,76,0.1); border:1px solid var(--or); color:var(--or); padding:3px 12px; border-radius:20px; font-size:0.85rem; font-weight:700;">0</span>
+            </div>
+            <ul id="admin-participants-liste"></ul>
+            <div class="ajouter-row">
+              <input id="input-nouveau-participant" type="text" placeholder="Nom du participant…" maxlength="60">
+              <button id="btn-ajouter-participant" class="btn btn-vert">＋ AJOUTER</button>
+            </div>
+
+            <hr>
+
+            <!-- Contrôles -->
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <button id="btn-lancer-tirage" class="btn btn-rouge btn-full">🎲 LANCER LE TIRAGE MAINTENANT</button>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button id="btn-modifier-infos" class="btn btn-gris" style="flex:1;">✏️ MODIFIER INFOS</button>
+                <button id="btn-annuler-tombola" class="btn btn-gris" style="flex:1; color:var(--rouge); border-color:var(--rouge);">✕ ANNULER</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Édition inline -->
+          <div id="section-edition" style="display:none;">
+            <div class="form-group">
+              <label>Titre</label>
+              <input id="edit-titre" type="text">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="edit-desc"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Nouvelle image du lot (optionnel)</label>
+              <label class="file-label" for="edit-lot-file">📁 Choisir une image</label>
+              <input id="edit-lot-file" type="file" accept="image/png,image/jpeg,image/webp">
+              <img id="edit-lot-preview" class="preview-img" src="" alt="Preview">
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+              <button id="btn-sauvegarder-edition" class="btn btn-or" style="flex:1;">💾 SAUVEGARDER</button>
+              <button id="btn-annuler-edition"     class="btn btn-gris" style="flex:1;">ANNULER</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== HELPERS localStorage =====
+const LS = {
+  getConfig:   () => JSON.parse(localStorage.getItem('tombola_config')   || '{}'),
+  getActive:   () => JSON.parse(localStorage.getItem('tombola_active')   || 'null'),
+  getArchives: () => JSON.parse(localStorage.getItem('tombola_archives') || '{}'),
+  setConfig:   v  => localStorage.setItem('tombola_config',   JSON.stringify(v)),
+  setActive:   v  => localStorage.setItem('tombola_active',   JSON.stringify(v)),
+  setArchives: v  => localStorage.setItem('tombola_archives', JSON.stringify(v)),
+  clearActive: () => localStorage.removeItem('tombola_active'),
+};
+
+// ===== UTILITAIRES =====
+function escHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function genId()  { return Date.now().toString(36) + Math.random().toString(36).substr(2, 6); }
+function pad(n)   { return String(n).padStart(2, '0'); }
+
+function toast(msg, ok = true) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = ok ? 'var(--or)' : 'var(--rouge)';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ===== HASH SHA-256 (Web Crypto API — natif, aucune dépendance) =====
+// Hash de "admin1234" : 3d4f2bf07dc1be38b20cd6e46949a1077f15c7b5b4f9f9eda9efde68d91d1c73
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Callback de la modale de confirmation
+let confirmCallback = null;
+
+// Fichier base64 en attente
+let logoBase64Pending = null;
+let lotBase64Pending  = null;
+let lotBase64EditPending = null;
+
+// ===== AUTHENTIFICATION =====
+document.getElementById('auth-btn').addEventListener('click', verifierMotDePasse);
+document.getElementById('auth-input').addEventListener('keydown', e => { if (e.key === 'Enter') verifierMotDePasse(); });
+
+async function verifierMotDePasse() {
+  const mdp = document.getElementById('auth-input').value;
+  if (!mdp) return;
+
+  const hash = await sha256(mdp);
+  const cfg  = LS.getConfig();
+  let hashStocke = cfg.mot_de_passe_admin || '';
+
+  // Première utilisation : aucun hash → initialiser avec "admin1234"
+  if (!hashStocke) {
+    const hashDefaut = '3d4f2bf07dc1be38b20cd6e46949a1077f15c7b5b4f9f9eda9efde68d91d1c73';
+    if (hash === hashDefaut) {
+      const newCfg = { ...cfg, mot_de_passe_admin: hashDefaut };
+      LS.setConfig(newCfg);
+      ouvrirSession();
+    } else {
+      erreurAuth();
+    }
+    return;
+  }
+
+  if (hash === hashStocke) ouvrirSession();
+  else erreurAuth();
+}
+
+function ouvrirSession() {
+  sessionStorage.setItem('admin_auth', '1');
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('admin-wrap').style.display   = 'block';
+  chargerConfig();
+  rendreTombola();
+  rendreHistorique();
+  // Synchronisation si admin.html est ouvert en doublon
+  window.addEventListener('storage', () => { rendreTombola(); rendreHistorique(); chargerConfig(); });
+}
+
+function erreurAuth() {
+  const el = document.getElementById('auth-erreur');
+  el.style.display = 'block';
+  document.getElementById('auth-input').value = '';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// Session persistante (onglet)
+if (sessionStorage.getItem('admin_auth') === '1') {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('admin-wrap').style.display   = 'block';
+  chargerConfig();
+  rendreTombola();
+  rendreHistorique();
+  window.addEventListener('storage', () => { rendreTombola(); rendreHistorique(); chargerConfig(); });
+}
+
+document.getElementById('btn-deconnexion').addEventListener('click', () => {
+  sessionStorage.removeItem('admin_auth');
+  location.reload();
+});
+
+// ===== CONFIG GÉRANT =====
+function chargerConfig() {
+  const cfg = LS.getConfig();
+  document.getElementById('cfg-nom').value     = cfg.nom_entreprise  || '';
+  document.getElementById('cfg-adresse').value = cfg.adresse         || '';
+  document.getElementById('cfg-tel').value     = cfg.telephone        || '';
+  document.getElementById('cfg-radio').value   = cfg.frequence_radio || '';
+  if (cfg.logo_base64) {
+    const p = document.getElementById('cfg-logo-preview');
+    p.src = cfg.logo_base64; p.style.display = 'block';
+    logoBase64Pending = cfg.logo_base64;
+  }
+}
+
+document.getElementById('cfg-logo-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  fileToBase64(f, b64 => {
+    logoBase64Pending = b64;
+    const p = document.getElementById('cfg-logo-preview');
+    p.src = b64; p.style.display = 'block';
+  });
+});
+
+document.getElementById('btn-sauvegarder-cfg').addEventListener('click', async () => {
+  const mdpInput = document.getElementById('cfg-mdp').value.trim();
+  const cfg = LS.getConfig();
+  cfg.nom_entreprise  = document.getElementById('cfg-nom').value.trim();
+  cfg.adresse         = document.getElementById('cfg-adresse').value.trim();
+  cfg.telephone       = document.getElementById('cfg-tel').value.trim();
+  cfg.frequence_radio = document.getElementById('cfg-radio').value.trim();
+  cfg.logo_base64     = logoBase64Pending || null;
+  if (mdpInput) {
+    cfg.mot_de_passe_admin = await sha256(mdpInput);
+    document.getElementById('cfg-mdp').value = '';
+  }
+  LS.setConfig(cfg);
+  toast('Paramètres sauvegardés !');
+});
+
+// ===== TOMBOLA — RENDU =====
+function rendreTombola() {
+  const t = LS.getActive();
+  const creation = document.getElementById('section-creation');
+  const gestion  = document.getElementById('section-gestion');
+  const edition  = document.getElementById('section-edition');
+  const badge    = document.getElementById('badge-statut-header');
+  const gagnantPost = document.getElementById('gagnant-post');
+  const btnLancer   = document.getElementById('btn-lancer-tirage');
+
+  edition.style.display = 'none';
+
+  if (!t || !t.id) {
+    creation.style.display = 'block';
+    gestion.style.display  = 'none';
+    badge.innerHTML = '';
+    return;
+  }
+
+  creation.style.display = 'none';
+  gestion.style.display  = 'block';
+
+  const s = t.statut;
+  if (s === 'en_cours')  badge.innerHTML = '<span class="badge-small badge-cours-s">EN COURS</span>';
+  else if (s === 'terminee') badge.innerHTML = '<span class="badge-small badge-ter-s">TERMINÉE</span>';
+  else                   badge.innerHTML = '<span class="badge-small badge-att-s">EN ATTENTE</span>';
+
+  document.getElementById('gestion-titre').textContent = t.titre || '—';
+  document.getElementById('gestion-desc').textContent  = t.description || '';
+
+  // Gagnant post-tirage
+  if (t.gagnant) {
+    gagnantPost.style.display = 'block';
+    document.getElementById('gagnant-post-nom').textContent = t.gagnant;
+    btnLancer.disabled = true;
+  } else {
+    gagnantPost.style.display = 'none';
+    btnLancer.disabled = (s === 'terminee');
+  }
+
+  // Participants
+  const participants = t.participants || {};
+  const entrees = Object.entries(participants);
+  document.getElementById('adm-compteur').textContent = entrees.length + (entrees.length > 1 ? ' tickets' : ' ticket');
+
+  const liste = document.getElementById('admin-participants-liste');
+  liste.innerHTML = '';
+
+  entrees.forEach(([id, nom], i) => {
+    const li = document.createElement('li');
+    li.className = 'adm-participant';
+    li.innerHTML = `
+      <span class="adm-part-num">#${String(i+1).padStart(3,'0')}</span>
+      <span class="adm-part-nom" data-id="${id}" title="Double-clic pour modifier">${escHtml(nom)}</span>
+      <button class="adm-part-del" data-id="${id}" title="Supprimer">✕</button>`;
+    liste.appendChild(li);
+  });
+
+  // Édition inline (double-clic)
+  liste.querySelectorAll('.adm-part-nom').forEach(el => {
+    el.addEventListener('dblclick', () => {
+      el.contentEditable = 'true'; el.focus();
+      const r = document.createRange(); r.selectNodeContents(el);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(r);
+    });
+    el.addEventListener('blur', () => {
+      const id = el.dataset.id;
+      const nouveau = el.textContent.trim();
+      el.contentEditable = 'false';
+      const active = LS.getActive();
+      if (!active) return;
+      if (nouveau && nouveau !== (active.participants || {})[id]) {
+        active.participants = active.participants || {};
+        active.participants[id] = nouveau;
+        LS.setActive(active);
+      } else {
+        el.textContent = (active.participants || {})[id] || '';
+      }
+    });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+  });
+
+  // Suppression
+  liste.querySelectorAll('.adm-part-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const active = LS.getActive(); if (!active) return;
+      delete active.participants[id];
+      LS.setActive(active);
+      rendreTombola();
+    });
+  });
+}
+
+// ===== AJOUTER PARTICIPANT =====
+document.getElementById('btn-ajouter-participant').addEventListener('click', ajouterParticipant);
+document.getElementById('input-nouveau-participant').addEventListener('keydown', e => { if (e.key === 'Enter') ajouterParticipant(); });
+
+function ajouterParticipant() {
+  const input = document.getElementById('input-nouveau-participant');
+  const nom = input.value.trim(); if (!nom) return;
+  const active = LS.getActive(); if (!active) return;
+  active.participants = active.participants || {};
+  active.participants[genId()] = nom;
+  LS.setActive(active);
+  input.value = ''; input.focus();
+  rendreTombola();
+}
+
+// ===== CRÉER TOMBOLA =====
+document.getElementById('new-countdown').addEventListener('change', e => {
+  document.getElementById('group-datetime').style.display = e.target.checked ? 'block' : 'none';
+});
+
+document.getElementById('new-lot-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  fileToBase64(f, b64 => {
+    lotBase64Pending = b64;
+    const p = document.getElementById('new-lot-preview');
+    p.src = b64; p.style.display = 'block';
+  });
+});
+
+document.getElementById('btn-creer').addEventListener('click', () => {
+  const titre = document.getElementById('new-titre').value.trim();
+  if (!titre) { toast('Le titre est requis.', false); return; }
+  const desc = document.getElementById('new-desc').value.trim();
+  const countdownActif = document.getElementById('new-countdown').checked;
+  const datefinStr = document.getElementById('new-datefin').value;
+  const dateFin = countdownActif && datefinStr ? new Date(datefinStr).getTime() : null;
+
+  const tombola = {
+    id: genId(),
+    titre, description: desc,
+    lot_image_base64: lotBase64Pending || null,
+    statut: 'en_cours',
+    compte_a_rebours_actif: countdownActif,
+    date_fin: dateFin,
+    gagnant: null,
+    tirage_demarre: false,
+    tirage_timestamp: null,
+    participants: {},
+  };
+
+  LS.setActive(tombola);
+  toast('Tombola créée !');
+
+  // Reset formulaire
+  document.getElementById('new-titre').value = '';
+  document.getElementById('new-desc').value  = '';
+  document.getElementById('new-lot-preview').style.display = 'none';
+  document.getElementById('new-countdown').checked = false;
+  document.getElementById('group-datetime').style.display = 'none';
+  lotBase64Pending = null;
+  rendreTombola();
+});
+
+// ===== LANCER LE TIRAGE =====
+document.getElementById('btn-lancer-tirage').addEventListener('click', () => {
+  const active = LS.getActive(); if (!active) return;
+  const parts = active.participants ? Object.values(active.participants) : [];
+  if (parts.length === 0) { toast('Aucun participant !', false); return; }
+
+  confirmer('Lancer le tirage maintenant ?\nCette action est visible immédiatement sur la page publique.', () => {
+    // Désigner le gagnant ici (source de vérité côté admin)
+    const gagnant = parts[Math.floor(Math.random() * parts.length)];
+    active.tirage_demarre  = true;
+    active.tirage_timestamp = Date.now();
+    active.gagnant = gagnant;
+    active.statut  = 'terminee';
+    LS.setActive(active);
+    toast('Tirage lancé !');
+    rendreTombola();
+  });
+});
+
+// ===== MODIFIER INFOS =====
+document.getElementById('btn-modifier-infos').addEventListener('click', () => {
+  const active = LS.getActive(); if (!active) return;
+  document.getElementById('edit-titre').value = active.titre || '';
+  document.getElementById('edit-desc').value  = active.description || '';
+  document.getElementById('edit-lot-preview').style.display = 'none';
+  lotBase64EditPending = null;
+  document.getElementById('section-gestion').style.display = 'none';
+  document.getElementById('section-edition').style.display = 'block';
+});
+
+document.getElementById('edit-lot-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  fileToBase64(f, b64 => {
+    lotBase64EditPending = b64;
+    const p = document.getElementById('edit-lot-preview');
+    p.src = b64; p.style.display = 'block';
+  });
+});
+
+document.getElementById('btn-sauvegarder-edition').addEventListener('click', () => {
+  const active = LS.getActive(); if (!active) return;
+  active.titre       = document.getElementById('edit-titre').value.trim();
+  active.description = document.getElementById('edit-desc').value.trim();
+  if (lotBase64EditPending) active.lot_image_base64 = lotBase64EditPending;
+  LS.setActive(active);
+  toast('Informations mises à jour !');
+  document.getElementById('section-edition').style.display = 'none';
+  document.getElementById('section-gestion').style.display = 'block';
+  rendreTombola();
+});
+
+document.getElementById('btn-annuler-edition').addEventListener('click', () => {
+  document.getElementById('section-edition').style.display = 'none';
+  document.getElementById('section-gestion').style.display = 'block';
+});
+
+// ===== ANNULER TOMBOLA =====
+document.getElementById('btn-annuler-tombola').addEventListener('click', () => {
+  confirmer('Annuler la tombola ?\nTous les participants seront perdus définitivement.', () => {
+    LS.clearActive();
+    toast('Tombola annulée.');
+    rendreTombola();
+  });
+});
+
+// ===== ARCHIVER ET TERMINER =====
+document.getElementById('btn-archiver').addEventListener('click', () => {
+  confirmer('Archiver cette tombola définitivement ?', () => {
+    const active = LS.getActive(); if (!active) return;
+    const archives = LS.getArchives();
+    archives[active.id] = { ...active, statut: 'terminee', date_fin: active.date_fin || Date.now() };
+    LS.setArchives(archives);
+    LS.clearActive();
+    toast('Tombola archivée !');
+    rendreTombola();
+    rendreHistorique();
+  });
+});
+
+// ===== HISTORIQUE =====
+function rendreHistorique() {
+  const archives = LS.getArchives();
+  const cont = document.getElementById('historique-liste');
+  cont.innerHTML = '';
+
+  const entrees = Object.entries(archives).sort((a, b) => (b[1].date_fin || 0) - (a[1].date_fin || 0));
+  if (entrees.length === 0) { cont.innerHTML = '<p style="color:#555;">Aucune tombola archivée.</p>'; return; }
+
+  entrees.forEach(([id, t]) => {
+    const div = document.createElement('div');
+    div.className = 'hist-item';
+    const date = t.date_fin ? new Date(t.date_fin).toLocaleDateString('fr-FR') : '—';
+    div.innerHTML = `
+      <div class="hist-info">
+        <div class="hist-titre">${escHtml(t.titre || 'Tombola')}</div>
+        <div class="hist-meta">🏆 ${escHtml(t.gagnant || '—')} · ${date}</div>
+      </div>
+      <button class="btn btn-gris" data-id="${id}" style="font-size:0.75rem; padding:6px 12px; color:var(--rouge); border-color:var(--rouge);">✕</button>`;
+    cont.appendChild(div);
+  });
+
+  cont.querySelectorAll('[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      confirmer('Supprimer cette entrée de l\'historique ?', () => {
+        const archives = LS.getArchives();
+        delete archives[id];
+        LS.setArchives(archives);
+        toast('Entrée supprimée.');
+        rendreHistorique();
+      });
+    });
+  });
+}
+
+// ===== MODALE CONFIRMATION =====
+function confirmer(msg, cb) {
+  confirmCallback = cb;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-overlay').style.display = 'flex';
+}
+document.getElementById('confirm-ok').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  if (confirmCallback) { confirmCallback(); confirmCallback = null; }
+});
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  confirmCallback = null;
+});
+
+// ===== UTILITAIRE : Fichier → Base64 =====
+function fileToBase64(file, callback) {
+  const reader = new FileReader();
+  reader.onload = e => callback(e.target.result);
+  reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>

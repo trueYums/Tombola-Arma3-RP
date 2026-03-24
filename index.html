@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tombola RP — Arma 3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --noir: #0a0a0a; --gris: #1e1e1e; --or: #c9a84c;
+      --blanc: #e8e8e8; --rouge: #c0392b; --vert: #27ae60;
+    }
+    body {
+      background-color: var(--noir); color: var(--blanc);
+      font-family: 'Rajdhani', sans-serif; font-size: 16px; min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: linear-gradient(180deg, #111 0%, var(--gris) 100%);
+      border-bottom: 2px solid var(--or); padding: 20px; text-align: center;
+    }
+    #header-logo {
+      width: 80px; height: 80px; object-fit: contain;
+      display: none; margin: 0 auto 10px;
+      border: 2px solid var(--or); border-radius: 4px;
+    }
+    #header-nom {
+      font-family: 'Bebas Neue', cursive; font-size: clamp(2rem, 6vw, 4rem);
+      color: var(--or); letter-spacing: 4px; text-shadow: 0 0 20px rgba(201,168,76,0.4);
+    }
+    #header-infos {
+      display: flex; justify-content: center; gap: 20px;
+      flex-wrap: wrap; margin-top: 8px; font-size: 0.85rem; color: #aaa; letter-spacing: 1px;
+    }
+
+    /* ===== MAIN ===== */
+    main { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+    .section-title {
+      font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--or);
+      letter-spacing: 3px; border-left: 4px solid var(--or);
+      padding-left: 15px; margin-bottom: 25px;
+    }
+
+    /* ===== TOMBOLA CARD ===== */
+    #section-active { margin-bottom: 60px; }
+    #tombola-card {
+      background: var(--gris); border: 1px solid #333;
+      border-radius: 8px; overflow: hidden; box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
+    #tombola-header {
+      padding: 25px; border-bottom: 1px solid #333;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 15px;
+    }
+    #tombola-titre {
+      font-family: 'Bebas Neue', cursive; font-size: clamp(1.8rem, 4vw, 3rem);
+      color: var(--blanc); letter-spacing: 2px;
+    }
+    .badge {
+      padding: 6px 14px; border-radius: 4px; font-weight: 700;
+      font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .badge-attente { background: #2c3e50; color: #95a5a6; border: 1px solid #95a5a6; }
+    .badge-cours {
+      background: rgba(39,174,96,0.2); color: var(--vert); border: 1px solid var(--vert);
+      animation: pulse-badge 2s infinite;
+    }
+    .badge-terminee { background: #1a1a1a; color: #555; border: 1px solid #555; }
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 10px rgba(39,174,96,0.5); }
+    }
+    #tombola-body { display: grid; grid-template-columns: 1fr 1fr; }
+    #tombola-info { padding: 25px; border-right: 1px solid #333; }
+    #tombola-desc { color: #bbb; line-height: 1.6; margin-bottom: 20px; font-size: 1rem; }
+    #tombola-lot-img {
+      width: 100%; max-height: 250px; object-fit: contain;
+      border-radius: 4px; border: 1px solid #444; display: none; background: #111;
+    }
+    #countdown-wrapper {
+      margin-top: 20px; padding: 15px;
+      background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 4px; text-align: center; display: none;
+    }
+    #countdown-label { font-size: 0.75rem; letter-spacing: 2px; color: var(--or); margin-bottom: 8px; }
+    #countdown-display { font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--or); letter-spacing: 3px; }
+
+    /* ===== PARTICIPANTS ===== */
+    #tombola-participants { padding: 25px; }
+    #participants-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+    }
+    #participants-titre { font-family: 'Bebas Neue', cursive; font-size: 1.2rem; letter-spacing: 2px; color: var(--or); }
+    #compteur-tickets {
+      background: rgba(201,168,76,0.1); border: 1px solid var(--or);
+      color: var(--or); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+    }
+    #liste-participants {
+      list-style: none; max-height: 300px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: var(--or) #111;
+    }
+    #liste-participants::-webkit-scrollbar { width: 4px; }
+    #liste-participants::-webkit-scrollbar-track { background: #111; }
+    #liste-participants::-webkit-scrollbar-thumb { background: var(--or); border-radius: 2px; }
+    .participant-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-bottom: 1px solid #2a2a2a; animation: fadeIn 0.3s ease;
+    }
+    .participant-num { color: var(--or); font-weight: 700; font-size: 0.8rem; min-width: 40px; }
+    .participant-nom { flex: 1; font-size: 1rem; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    #no-tombola { text-align: center; padding: 80px 20px; color: #555; }
+    #no-tombola h2 { font-family: 'Bebas Neue', cursive; font-size: 2rem; letter-spacing: 3px; margin-bottom: 10px; }
+
+    /* ===== ROULEAU ===== */
+    #tirage-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 1000;
+      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 30px;
+    }
+    #tirage-label {
+      font-family: 'Bebas Neue', cursive; font-size: clamp(2rem, 5vw, 4rem);
+      color: var(--or); letter-spacing: 6px; text-align: center;
+    }
+    #rouleau-container {
+      width: min(500px, 90vw); height: 120px; overflow: hidden;
+      border: 2px solid var(--or); border-radius: 8px; background: #111;
+      position: relative; box-shadow: 0 0 30px rgba(201,168,76,0.3);
+    }
+    #rouleau-container::before, #rouleau-container::after {
+      content: ''; position: absolute; left: 0; right: 0; height: 35px; z-index: 2; pointer-events: none;
+    }
+    #rouleau-container::before { top: 0; background: linear-gradient(180deg, #111 0%, transparent 100%); }
+    #rouleau-container::after  { bottom: 0; background: linear-gradient(0deg, #111 0%, transparent 100%); }
+    #rouleau-inner { display: flex; flex-direction: column; position: absolute; width: 100%; top: 0; }
+    .rouleau-nom {
+      height: 40px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', cursive; font-size: 1.5rem; letter-spacing: 3px;
+      color: var(--blanc); flex-shrink: 0;
+    }
+    #rouleau-selecteur {
+      position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+      height: 40px; border-top: 2px solid var(--or); border-bottom: 2px solid var(--or);
+      z-index: 3; pointer-events: none; background: rgba(201,168,76,0.05);
+    }
+
+    /* ===== CÉLÉBRATION ===== */
+    #celebration-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; text-align: center; padding: 20px;
+    }
+    #celebration-felicitations {
+      font-family: 'Bebas Neue', cursive; font-size: clamp(3rem, 8vw, 6rem);
+      color: var(--or); letter-spacing: 8px; animation: glow-or 1.5s infinite alternate;
+    }
+    @keyframes glow-or {
+      from { text-shadow: 0 0 10px var(--or), 0 0 20px var(--or); }
+      to   { text-shadow: 0 0 20px var(--or), 0 0 40px #ffdd6b, 0 0 80px #ffdd6b; }
+    }
+    #celebration-nom {
+      font-family: 'Bebas Neue', cursive; font-size: clamp(4rem, 10vw, 10vw);
+      color: var(--blanc); letter-spacing: 4px; animation: pulse-nom 1s infinite alternate;
+      word-break: break-word; max-width: 90vw;
+    }
+    @keyframes pulse-nom {
+      from { transform: scale(1); }
+      to   { transform: scale(1.05); text-shadow: 0 0 30px rgba(255,255,255,0.3); }
+    }
+    #celebration-sous { font-size: 1.2rem; color: #aaa; letter-spacing: 2px; font-weight: 600; }
+    #confetti-canvas { position: fixed; inset: 0; z-index: 9999; pointer-events: none; display: none; }
+
+    /* ===== ARCHIVES ===== */
+    #section-archives { margin-top: 60px; }
+    #grille-archives { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    .archive-card {
+      background: #161616; border: 1px solid #2a2a2a; border-radius: 8px;
+      overflow: hidden; opacity: 0.7; filter: saturate(0.3); transition: opacity 0.2s, filter 0.2s;
+    }
+    .archive-card:hover { opacity: 0.9; filter: saturate(0.6); }
+    .archive-card-img { width: 100%; height: 140px; object-fit: cover; display: block; background: #111; }
+    .archive-card-placeholder {
+      width: 100%; height: 140px; display: flex; align-items: center;
+      justify-content: center; color: #333; font-size: 2.5rem; background: #111;
+    }
+    .archive-card-body { padding: 15px; }
+    .archive-card-titre { font-family: 'Bebas Neue', cursive; font-size: 1.2rem; letter-spacing: 2px; margin-bottom: 8px; }
+    .archive-gagnant { border: 1px solid #444; border-radius: 4px; padding: 6px 10px; font-size: 0.9rem; color: #aaa; margin-bottom: 8px; }
+    .archive-gagnant strong { color: #ccc; }
+    .archive-date { font-size: 0.75rem; color: #555; letter-spacing: 1px; }
+    .badge-terminee-sm {
+      display: inline-block; padding: 2px 8px; background: #1a1a1a; color: #555;
+      border: 1px solid #333; border-radius: 3px; font-size: 0.65rem; letter-spacing: 2px; margin-bottom: 8px;
+    }
+    #no-archives { color: #444; font-size: 0.9rem; padding: 20px 0; }
+
+    footer {
+      text-align: center; padding: 30px; color: #333;
+      font-size: 0.75rem; letter-spacing: 2px;
+      border-top: 1px solid #1a1a1a; margin-top: 60px;
+    }
+
+    @media (max-width: 768px) {
+      #tombola-body { grid-template-columns: 1fr; }
+      #tombola-info { border-right: none; border-bottom: 1px solid #333; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Overlay rouleau -->
+<div id="tirage-overlay">
+  <div id="tirage-label">⚙ TIRAGE EN COURS</div>
+  <div id="rouleau-container">
+    <div id="rouleau-selecteur"></div>
+    <div id="rouleau-inner"></div>
+  </div>
+</div>
+
+<!-- Overlay célébration -->
+<div id="celebration-overlay">
+  <div id="celebration-felicitations">FÉLICITATIONS !</div>
+  <div id="celebration-nom"></div>
+  <div id="celebration-sous">GAGNANT DE LA TOMBOLA</div>
+</div>
+
+<header>
+  <img id="header-logo" src="" alt="Logo">
+  <div id="header-nom">TOMBOLA RP</div>
+  <div id="header-infos">
+    <span id="hdr-adresse"></span>
+    <span id="hdr-tel"></span>
+    <span id="hdr-radio"></span>
+  </div>
+</header>
+
+<main>
+  <section id="section-active">
+    <div class="section-title">TOMBOLA EN COURS</div>
+    <div id="tombola-card">
+      <div id="no-tombola">
+        <h2>AUCUNE TOMBOLA ACTIVE</h2>
+        <p>Revenez bientôt pour la prochaine tombola !</p>
+      </div>
+      <div id="tombola-content" style="display:none;">
+        <div id="tombola-header">
+          <div id="tombola-titre">—</div>
+          <div id="tombola-statut" class="badge badge-attente">EN ATTENTE</div>
+        </div>
+        <div id="tombola-body">
+          <div id="tombola-info">
+            <p id="tombola-desc"></p>
+            <img id="tombola-lot-img" src="" alt="Lot">
+            <div id="countdown-wrapper">
+              <div id="countdown-label">⏱ FIN DU TIRAGE DANS</div>
+              <div id="countdown-display">00J 00H 00M 00S</div>
+            </div>
+          </div>
+          <div id="tombola-participants">
+            <div id="participants-header">
+              <div id="participants-titre">PARTICIPANTS</div>
+              <div id="compteur-tickets">0 ticket</div>
+            </div>
+            <ul id="liste-participants"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="section-archives">
+    <div class="section-title">TOMBOLAS PRÉCÉDENTES</div>
+    <div id="grille-archives">
+      <p id="no-archives">Aucune tombola archivée pour le moment.</p>
+    </div>
+  </section>
+</main>
+
+<footer>TOMBOLA RP — ARMA 3</footer>
+
+<script>
+// ===== ÉTAT LOCAL =====
+let tirageDeja = false;
+let countdownInterval = null;
+let rafId = null;
+let nomGagnant = '';
+let dernierTirageTs = 0;
+
+// ===== LECTURE localStorage =====
+const LS = {
+  getConfig:   () => JSON.parse(localStorage.getItem('tombola_config')   || '{}'),
+  getActive:   () => JSON.parse(localStorage.getItem('tombola_active')   || 'null'),
+  getArchives: () => JSON.parse(localStorage.getItem('tombola_archives') || '{}'),
+};
+
+// ===== SYNCHRONISATION INTER-ONGLETS =====
+// L'événement 'storage' se déclenche automatiquement dans tous les onglets
+// ouverts sur le même domaine quand un autre onglet modifie localStorage.
+window.addEventListener('storage', () => lireEtRendre());
+
+// ===== RENDU COMPLET =====
+function lireEtRendre() {
+  const config   = LS.getConfig();
+  const active   = LS.getActive();
+  const archives = LS.getArchives();
+  rendreConfig(config);
+  rendreTombola(active);
+  rendreArchives(archives);
+}
+
+// ===== CONFIG GÉRANT =====
+function rendreConfig(cfg) {
+  document.getElementById('header-nom').textContent = cfg.nom_entreprise || 'TOMBOLA RP';
+  document.title = (cfg.nom_entreprise || 'Tombola RP') + ' — Arma 3';
+
+  const logo = document.getElementById('header-logo');
+  if (cfg.logo_base64) { logo.src = cfg.logo_base64; logo.style.display = 'block'; }
+  else logo.style.display = 'none';
+
+  document.getElementById('hdr-adresse').textContent = cfg.adresse        ? '📍 ' + cfg.adresse        : '';
+  document.getElementById('hdr-tel').textContent     = cfg.telephone      ? '📞 ' + cfg.telephone      : '';
+  document.getElementById('hdr-radio').textContent   = cfg.frequence_radio ? '📻 ' + cfg.frequence_radio : '';
+}
+
+// ===== TOMBOLA ACTIVE =====
+function rendreTombola(t) {
+  if (!t || !t.id) {
+    document.getElementById('no-tombola').style.display = 'block';
+    document.getElementById('tombola-content').style.display = 'none';
+    stopCountdown();
+    return;
+  }
+
+  document.getElementById('no-tombola').style.display = 'none';
+  document.getElementById('tombola-content').style.display = 'block';
+
+  document.getElementById('tombola-titre').textContent = t.titre || '—';
+  document.getElementById('tombola-desc').textContent  = t.description || '';
+
+  const img = document.getElementById('tombola-lot-img');
+  if (t.lot_image_base64) { img.src = t.lot_image_base64; img.style.display = 'block'; }
+  else img.style.display = 'none';
+
+  // Badge statut
+  const badge = document.getElementById('tombola-statut');
+  badge.className = 'badge';
+  if (t.statut === 'en_cours')  { badge.classList.add('badge-cours');    badge.textContent = 'EN COURS';  }
+  else if (t.statut === 'terminee') { badge.classList.add('badge-terminee'); badge.textContent = 'TERMINÉE'; }
+  else                          { badge.classList.add('badge-attente');   badge.textContent = 'EN ATTENTE'; }
+
+  // Participants
+  const liste = document.getElementById('liste-participants');
+  liste.innerHTML = '';
+  const participants = t.participants ? Object.values(t.participants) : [];
+  const n = participants.length;
+  document.getElementById('compteur-tickets').textContent = n + (n > 1 ? ' tickets' : ' ticket');
+
+  participants.forEach((nom, i) => {
+    const li = document.createElement('li');
+    li.className = 'participant-item';
+    li.innerHTML = `<span class="participant-num">#${String(i+1).padStart(3,'0')}</span><span class="participant-nom">${escHtml(nom)}</span>`;
+    liste.appendChild(li);
+  });
+
+  // Compte à rebours
+  if (t.compte_a_rebours_actif && t.date_fin && t.statut !== 'terminee') {
+    document.getElementById('countdown-wrapper').style.display = 'block';
+    demarrerCountdown(t.date_fin, participants);
+  } else {
+    document.getElementById('countdown-wrapper').style.display = 'none';
+    stopCountdown();
+  }
+
+  // Déclenchement tirage (flag écrit par admin)
+  if (t.tirage_demarre && t.tirage_timestamp && t.tirage_timestamp !== dernierTirageTs) {
+    dernierTirageTs = t.tirage_timestamp;
+    tirageDeja = true;
+    stopCountdown();
+    lancerTirage(participants, t.gagnant);
+  }
+  if (!t.tirage_demarre) tirageDeja = false;
+}
+
+// ===== COMPTE À REBOURS =====
+function demarrerCountdown(dateFin, participants) {
+  stopCountdown();
+  const el = document.getElementById('countdown-display');
+  countdownInterval = setInterval(() => {
+    const reste = dateFin - Date.now();
+    if (reste <= 0) {
+      stopCountdown();
+      el.textContent = 'TIRAGE !';
+      if (!tirageDeja) { tirageDeja = true; lancerTirage(participants, null); }
+      return;
+    }
+    const j = Math.floor(reste / 86400000);
+    const h = Math.floor((reste % 86400000) / 3600000);
+    const m = Math.floor((reste % 3600000) / 60000);
+    const s = Math.floor((reste % 60000) / 1000);
+    el.textContent = `${pad(j)}J ${pad(h)}H ${pad(m)}M ${pad(s)}S`;
+  }, 1000);
+}
+
+function stopCountdown() {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// ===== TIRAGE — ANIMATION ROULEAU (8s rapide + 3s ralentissement) =====
+function lancerTirage(participants, gagnantForce) {
+  if (!participants || participants.length === 0) return;
+  if (rafId) cancelAnimationFrame(rafId);
+
+  // Utiliser le gagnant désigné par l'admin, ou en choisir un aléatoire
+  nomGagnant = gagnantForce || participants[Math.floor(Math.random() * participants.length)];
+
+  const overlay = document.getElementById('tirage-overlay');
+  overlay.style.display = 'flex';
+
+  const inner = document.getElementById('rouleau-inner');
+  inner.innerHTML = '';
+  inner.style.transform = 'translateY(0)';
+  inner.style.filter = 'blur(0px)';
+
+  // Dupliquer 5× pour l'effet de défilement infini
+  const liste5x = [];
+  for (let i = 0; i < 5; i++) liste5x.push(...participants);
+
+  liste5x.forEach(nom => {
+    const div = document.createElement('div');
+    div.className = 'rouleau-nom';
+    div.textContent = nom;
+    inner.appendChild(div);
+  });
+
+  const ITEM_H = 40;
+  const CENTRE = 40; // milieu de la fenêtre 120px
+  let position = 0;
+  let phase = 'rapide';
+  let frameCompte = 0;
+  let ralenFrames = 0;
+  const FRAMES_RAPIDE = 60 * 8;
+  const FRAMES_RALEN  = 60 * 3;
+
+  // Position cible : gagnant dans le 4e groupe
+  const idxGagnant = participants.length * 3 + participants.indexOf(nomGagnant);
+  const targetPos  = idxGagnant * ITEM_H - CENTRE;
+
+  function animer() {
+    frameCompte++;
+
+    if (phase === 'rapide') {
+      position += 14;
+      inner.style.filter = 'blur(10px)';
+      // Boucler dans les 2 premières répétitions pendant la phase rapide
+      const maxBoucle = participants.length * 2 * ITEM_H;
+      if (position > maxBoucle) position -= participants.length * ITEM_H;
+      if (frameCompte >= FRAMES_RAPIDE) { phase = 'ralentissement'; ralenFrames = 0; }
+
+    } else if (phase === 'ralentissement') {
+      ralenFrames++;
+      const ratio = ralenFrames / FRAMES_RALEN;
+      position += 14 * (1 - ratio) + 0.5;
+      inner.style.filter = `blur(${(10 * (1 - ratio)).toFixed(1)}px)`;
+      if (ralenFrames >= FRAMES_RALEN) phase = 'arret';
+
+    } else if (phase === 'arret') {
+      inner.style.filter = 'blur(0px)';
+      const diff = targetPos - position;
+      if (Math.abs(diff) < 0.5) {
+        position = targetPos;
+        inner.style.transform = `translateY(-${position.toFixed(1)}px)`;
+        setTimeout(() => { overlay.style.display = 'none'; lancerCelebration(); }, 800);
+        return;
+      }
+      position += diff * 0.12;
+    }
+
+    inner.style.transform = `translateY(-${position.toFixed(1)}px)`;
+    rafId = requestAnimationFrame(animer);
+  }
+
+  rafId = requestAnimationFrame(animer);
+}
+
+// ===== CÉLÉBRATION (60s non-skippable) =====
+function lancerCelebration() {
+  document.getElementById('celebration-nom').textContent = nomGagnant;
+  document.getElementById('celebration-overlay').style.display = 'flex';
+  lancerConfettis();
+  setTimeout(() => {
+    document.getElementById('celebration-overlay').style.display = 'none';
+    document.getElementById('confetti-canvas').style.display = 'none';
+  }, 65000);
+}
+
+// ===== CONFETTIS (canvas, 250 particules, 60s avec fondu) =====
+function lancerConfettis() {
+  const canvas = document.getElementById('confetti-canvas');
+  canvas.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  const couleurs = ['#c9a84c','#ffffff','#c0392b','#27ae60','#2980b9','#ffdd6b','#e74c3c','#f39c12'];
+  const particules = Array.from({ length: 250 }, () => ({
+    x:    Math.random() * canvas.width,
+    y:    Math.random() * canvas.height - canvas.height,
+    w:    Math.random() * 12 + 4,
+    h:    Math.random() * 6 + 2,
+    couleur: couleurs[Math.floor(Math.random() * couleurs.length)],
+    vy:   Math.random() * 3 + 1.5,
+    vx:   (Math.random() - 0.5) * 2.5,
+    rot:  Math.random() * 360,
+    rotV: (Math.random() - 0.5) * 7,
+    alpha: 1,
+  }));
+
+  const depart = Date.now();
+  const DUREE  = 60000;
+
+  function dessiner() {
+    const ecoule = Date.now() - depart;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particules.forEach(p => {
+      if (ecoule > DUREE - 5000) p.alpha = Math.max(0, 1 - (ecoule - (DUREE - 5000)) / 5000);
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.couleur;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+      p.y += p.vy; p.x += p.vx; p.rot += p.rotV;
+      if (p.y > canvas.height) { p.y = -p.h; p.x = Math.random() * canvas.width; }
+    });
+    if (ecoule < DUREE) requestAnimationFrame(dessiner);
+  }
+
+  dessiner();
+  window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+}
+
+// ===== ARCHIVES =====
+function rendreArchives(archives) {
+  const grille = document.getElementById('grille-archives');
+  grille.querySelectorAll('.archive-card').forEach(el => el.remove());
+
+  const entrees = Object.values(archives).sort((a, b) => (b.date_fin || 0) - (a.date_fin || 0));
+  const noArc = document.getElementById('no-archives');
+
+  if (entrees.length === 0) { noArc.style.display = 'block'; return; }
+  noArc.style.display = 'none';
+
+  entrees.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'archive-card';
+    const date = t.date_fin ? new Date(t.date_fin).toLocaleDateString('fr-FR') : '—';
+    const imgHTML = t.lot_image_base64
+      ? `<img class="archive-card-img" src="${t.lot_image_base64}" alt="Lot">`
+      : `<div class="archive-card-placeholder">🏆</div>`;
+    card.innerHTML = `
+      ${imgHTML}
+      <div class="archive-card-body">
+        <span class="badge-terminee-sm">TERMINÉE</span>
+        <div class="archive-card-titre">${escHtml(t.titre || 'Tombola')}</div>
+        <div class="archive-gagnant">🏆 Gagnant : <strong>${escHtml(t.gagnant || '—')}</strong></div>
+        <div class="archive-date">${date}</div>
+      </div>`;
+    grille.appendChild(card);
+  });
+}
+
+// ===== UTILITAIRE =====
+function escHtml(str) {
+  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
+
+// ===== DÉMARRAGE =====
+lireEtRendre();
+</script>
+</body>
+</html>
