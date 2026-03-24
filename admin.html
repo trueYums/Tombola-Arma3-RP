@@ -352,6 +352,7 @@
             <ul id="admin-participants-liste"></ul>
             <div class="ajouter-row">
               <input id="input-nouveau-participant" type="text" placeholder="Nom du participant…" maxlength="60">
+              <input id="input-qte-participant" type="number" min="1" max="50" value="1" title="Nombre de tickets" style="width:70px; flex-shrink:0; text-align:center;">
               <button id="btn-ajouter-participant" class="btn btn-vert">＋ AJOUTER</button>
             </div>
 
@@ -644,28 +645,45 @@ document.getElementById('btn-ajouter-participant').addEventListener('click', ajo
 document.getElementById('input-nouveau-participant').addEventListener('keydown', e => { if (e.key === 'Enter') ajouterParticipant(); });
 
 function ajouterParticipant() {
-  const input = document.getElementById('input-nouveau-participant');
-  const nom = input.value.trim(); if (!nom) return;
-  const active = LS.getActive(); if (!active) return;
+  const input   = document.getElementById('input-nouveau-participant');
+  const qteEl   = document.getElementById('input-qte-participant');
+  const nom     = input.value.trim(); if (!nom) return;
+  const active  = LS.getActive(); if (!active) return;
   active.participants = active.participants || {};
 
-  // Vérification limite total de tickets
-  if (active.max_tickets > 0 && Object.keys(active.participants).length >= active.max_tickets) {
-    toast(`Limite atteinte : ${active.max_tickets} tickets maximum.`, false); return;
-  }
+  let qte = Math.max(1, parseInt(qteEl.value) || 1);
 
-  // Vérification limite par personne
+  // Déjà pris par cette personne
+  const dejaPris = Object.values(active.participants)
+    .filter(n => n.toLowerCase() === nom.toLowerCase()).length;
+
+  // Clamp selon max par personne
   if (active.max_par_personne > 0) {
-    const dejaPris = Object.values(active.participants)
-      .filter(n => n.toLowerCase() === nom.toLowerCase()).length;
-    if (dejaPris >= active.max_par_personne) {
-      toast(`${nom} a déjà ${active.max_par_personne} ticket(s) au maximum.`, false); return;
+    const restePossible = active.max_par_personne - dejaPris;
+    if (restePossible <= 0) {
+      toast(`${nom} a déjà atteint la limite de ${active.max_par_personne} ticket(s).`, false); return;
     }
+    qte = Math.min(qte, restePossible);
   }
 
-  active.participants[genId()] = nom;
+  // Clamp selon max total
+  if (active.max_tickets > 0) {
+    const totalActuel = Object.keys(active.participants).length;
+    const resteTotal  = active.max_tickets - totalActuel;
+    if (resteTotal <= 0) {
+      toast(`Limite atteinte : ${active.max_tickets} tickets maximum.`, false); return;
+    }
+    qte = Math.min(qte, resteTotal);
+  }
+
+  // Ajouter les N tickets
+  for (let i = 0; i < qte; i++) active.participants[genId()] = nom;
   LS.setActive(active);
-  input.value = ''; input.focus();
+
+  if (qte > 1) toast(`${qte} tickets ajoutés pour ${nom}.`);
+  input.value = '';
+  qteEl.value = '1';
+  input.focus();
   rendreTombola();
 }
 

@@ -327,7 +327,7 @@
 
 <footer>
   TOMBOLA RP — ARMA 3
-  <span style="display:block; margin-top:6px; font-size:0.65rem; color:#2a2a2a; letter-spacing:3px;">
+  <span style="display:block; margin-top:8px; font-size:0.75rem; color:var(--or); letter-spacing:4px; opacity:0.6;">
     SYSTÈME CONÇU PAR LARRY CALL
   </span>
 </footer>
@@ -340,11 +340,17 @@ let rafId = null;
 let nomGagnant = '';
 let dernierTirageTs = 0;
 
-// ===== LECTURE localStorage =====
+// Horodatage du chargement de la page.
+// Sert à éviter de relancer l'animation du tirage si le client rafraîchit
+// la page alors que le tirage a déjà été effectué (timestamp antérieur au chargement).
+const PAGE_LOAD_TS = Date.now();
+
+// ===== LECTURE / ÉCRITURE localStorage =====
 const LS = {
   getConfig:   () => JSON.parse(localStorage.getItem('tombola_config')   || '{}'),
   getActive:   () => JSON.parse(localStorage.getItem('tombola_active')   || 'null'),
   getArchives: () => JSON.parse(localStorage.getItem('tombola_archives') || '{}'),
+  setActive:   v  => localStorage.setItem('tombola_active', JSON.stringify(v)),
 };
 
 // ===== SYNCHRONISATION INTER-ONGLETS =====
@@ -440,8 +446,12 @@ function rendreTombola(t) {
     stopCountdown();
   }
 
-  // Déclenchement tirage (flag écrit par admin)
-  if (t.tirage_demarre && t.tirage_timestamp && t.tirage_timestamp !== dernierTirageTs) {
+  // Déclenchement tirage (admin ou compte à rebours)
+  // On ne lance l'animation que si le tirage_timestamp est POSTÉRIEUR au chargement
+  // de cette page — évite de relancer l'animation à chaque rafraîchissement.
+  if (t.tirage_demarre && t.tirage_timestamp &&
+      t.tirage_timestamp > PAGE_LOAD_TS &&
+      t.tirage_timestamp !== dernierTirageTs) {
     dernierTirageTs = t.tirage_timestamp;
     tirageDeja = true;
     stopCountdown();
@@ -459,7 +469,23 @@ function demarrerCountdown(dateFin, participants) {
     if (reste <= 0) {
       stopCountdown();
       el.textContent = 'TIRAGE !';
-      if (!tirageDeja) { tirageDeja = true; lancerTirage(participants, null); }
+      if (!tirageDeja) {
+        tirageDeja = true;
+        // Choisir le gagnant et persister dans localStorage
+        // pour que l'admin puisse archiver et que le refresh ne relance pas l'animation
+        const gagnant = participants[Math.floor(Math.random() * participants.length)];
+        const ts = Date.now();
+        dernierTirageTs = ts; // évite double-lancement via storage event
+        const active = LS.getActive();
+        if (active) {
+          active.tirage_demarre = true;
+          active.tirage_timestamp = ts;
+          active.gagnant = gagnant;
+          active.statut = 'terminee';
+          LS.setActive(active);
+        }
+        lancerTirage(participants, gagnant);
+      }
       return;
     }
     const j = Math.floor(reste / 86400000);
