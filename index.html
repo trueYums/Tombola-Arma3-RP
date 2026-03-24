@@ -79,7 +79,13 @@
     }
     #tombola-body { display: grid; grid-template-columns: 1fr 1fr; }
     #tombola-info { padding: 25px; border-right: 1px solid #333; }
-    #tombola-desc { color: #bbb; line-height: 1.6; margin-bottom: 20px; font-size: 1rem; }
+    #tombola-desc { color: #bbb; line-height: 1.6; margin-bottom: 14px; font-size: 1rem; }
+    #tombola-meta { display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .meta-chip {
+      background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 4px; padding: 7px 14px;
+      font-family: 'Bebas Neue', cursive; font-size: 1rem; color: var(--or); letter-spacing: 2px;
+    }
     #tombola-lot-img {
       width: 100%; max-height: 250px; object-fit: contain;
       border-radius: 4px; border: 1px solid #444; display: none; background: #111;
@@ -259,6 +265,7 @@
         <div id="tombola-body">
           <div id="tombola-info">
             <p id="tombola-desc"></p>
+            <div id="tombola-meta"></div>
             <img id="tombola-lot-img" src="" alt="Lot">
             <div id="countdown-wrapper">
               <div id="countdown-label">⏱ FIN DU TIRAGE DANS</div>
@@ -357,12 +364,27 @@ function rendreTombola(t) {
   else if (t.statut === 'terminee') { badge.classList.add('badge-terminee'); badge.textContent = 'TERMINÉE'; }
   else                          { badge.classList.add('badge-attente');   badge.textContent = 'EN ATTENTE'; }
 
+  // Méta : prix / limites
+  const metaEl = document.getElementById('tombola-meta');
+  const chips = [];
+  if (t.prix_ticket > 0)      chips.push(`💰 ${t.prix_ticket} €/ticket`);
+  const participants = t.participants ? Object.values(t.participants) : [];
+  const n = participants.length;
+  const maxT = t.max_tickets || 0;
+  if (maxT > 0)               chips.push(`🎟 ${n} / ${maxT} tickets`);
+  if (t.max_par_personne > 0) chips.push(`👤 Max ${t.max_par_personne}/pers.`);
+  if (chips.length > 0) {
+    metaEl.innerHTML = chips.map(c => `<span class="meta-chip">${c}</span>`).join('');
+    metaEl.style.display = 'flex';
+  } else {
+    metaEl.style.display = 'none';
+  }
+
   // Participants
   const liste = document.getElementById('liste-participants');
   liste.innerHTML = '';
-  const participants = t.participants ? Object.values(t.participants) : [];
-  const n = participants.length;
-  document.getElementById('compteur-tickets').textContent = n + (n > 1 ? ' tickets' : ' ticket');
+  document.getElementById('compteur-tickets').textContent =
+    maxT > 0 ? `${n} / ${maxT}` : `${n} ticket${n > 1 ? 's' : ''}`;
 
   participants.forEach((nom, i) => {
     const li = document.createElement('li');

@@ -81,6 +81,11 @@
     /* ===== FORMULAIRES ===== */
     .form-group { margin-bottom: 16px; }
     label { display: block; font-size: 0.8rem; letter-spacing: 2px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+    input[type="number"] {
+      width: 100%; padding: 10px 14px; background: #111; border: 1px solid #333;
+      border-radius: 5px; color: var(--blanc); font-family: 'Rajdhani', sans-serif; font-size: 1rem; outline: none;
+    }
+    input[type="number"]:focus { border-color: var(--or); }
     input[type="text"], input[type="password"], input[type="datetime-local"], textarea {
       width: 100%; padding: 10px 14px; background: #111; border: 1px solid #333;
       border-radius: 5px; color: var(--blanc); font-family: 'Rajdhani', sans-serif; font-size: 1rem; outline: none;
@@ -304,6 +309,20 @@
               <label>Date et heure de fin</label>
               <input id="new-datefin" type="datetime-local">
             </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
+              <div class="form-group" style="margin:0;">
+                <label>Prix/ticket (€)</label>
+                <input id="new-prix" type="number" min="0" value="0" placeholder="0 = gratuit">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Max tickets total</label>
+                <input id="new-max-tickets" type="number" min="0" value="0" placeholder="0 = illimité">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label>Max/personne</label>
+                <input id="new-max-par-personne" type="number" min="0" value="1" placeholder="0 = illimité">
+              </div>
+            </div>
             <button id="btn-creer" class="btn btn-or btn-full">⚡ CRÉER LA TOMBOLA</button>
           </div>
 
@@ -313,7 +332,8 @@
             <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
               <div id="gestion-titre" style="font-family:'Bebas Neue',cursive; font-size:1.6rem; letter-spacing:2px;"></div>
             </div>
-            <div id="gestion-desc" style="color:#888; font-size:0.9rem; margin-bottom:12px;"></div>
+            <div id="gestion-desc" style="color:#888; font-size:0.9rem; margin-bottom:8px;"></div>
+            <div id="gestion-meta" style="font-size:0.85rem; color:var(--or); letter-spacing:1px; margin-bottom:12px;"></div>
 
             <!-- Gagnant post-tirage -->
             <div id="gagnant-post">
@@ -546,6 +566,13 @@ function rendreTombola() {
   document.getElementById('gestion-titre').textContent = t.titre || '—';
   document.getElementById('gestion-desc').textContent  = t.description || '';
 
+  // Méta : prix / limites
+  const metaAdm = [];
+  if (t.prix_ticket > 0)      metaAdm.push(`💰 ${t.prix_ticket} €/ticket`);
+  if (t.max_tickets > 0)      metaAdm.push(`🎟 Max ${t.max_tickets} tickets`);
+  if (t.max_par_personne > 0) metaAdm.push(`👤 Max ${t.max_par_personne}/personne`);
+  document.getElementById('gestion-meta').textContent = metaAdm.join('  ·  ');
+
   // Gagnant post-tirage
   if (t.gagnant) {
     gagnantPost.style.display = 'block';
@@ -559,7 +586,9 @@ function rendreTombola() {
   // Participants
   const participants = t.participants || {};
   const entrees = Object.entries(participants);
-  document.getElementById('adm-compteur').textContent = entrees.length + (entrees.length > 1 ? ' tickets' : ' ticket');
+  const maxT = t.max_tickets || 0;
+  document.getElementById('adm-compteur').textContent =
+    maxT > 0 ? `${entrees.length} / ${maxT} tickets` : `${entrees.length} ticket${entrees.length > 1 ? 's' : ''}`;
 
   const liste = document.getElementById('admin-participants-liste');
   liste.innerHTML = '';
@@ -619,6 +648,21 @@ function ajouterParticipant() {
   const nom = input.value.trim(); if (!nom) return;
   const active = LS.getActive(); if (!active) return;
   active.participants = active.participants || {};
+
+  // Vérification limite total de tickets
+  if (active.max_tickets > 0 && Object.keys(active.participants).length >= active.max_tickets) {
+    toast(`Limite atteinte : ${active.max_tickets} tickets maximum.`, false); return;
+  }
+
+  // Vérification limite par personne
+  if (active.max_par_personne > 0) {
+    const dejaPris = Object.values(active.participants)
+      .filter(n => n.toLowerCase() === nom.toLowerCase()).length;
+    if (dejaPris >= active.max_par_personne) {
+      toast(`${nom} a déjà ${active.max_par_personne} ticket(s) au maximum.`, false); return;
+    }
+  }
+
   active.participants[genId()] = nom;
   LS.setActive(active);
   input.value = ''; input.focus();
@@ -654,6 +698,9 @@ document.getElementById('btn-creer').addEventListener('click', () => {
     statut: 'en_cours',
     compte_a_rebours_actif: countdownActif,
     date_fin: dateFin,
+    prix_ticket:      parseInt(document.getElementById('new-prix').value)            || 0,
+    max_tickets:      parseInt(document.getElementById('new-max-tickets').value)     || 0,
+    max_par_personne: parseInt(document.getElementById('new-max-par-personne').value)|| 0,
     gagnant: null,
     tirage_demarre: false,
     tirage_timestamp: null,
@@ -669,6 +716,9 @@ document.getElementById('btn-creer').addEventListener('click', () => {
   document.getElementById('new-lot-preview').style.display = 'none';
   document.getElementById('new-countdown').checked = false;
   document.getElementById('group-datetime').style.display = 'none';
+  document.getElementById('new-prix').value = '0';
+  document.getElementById('new-max-tickets').value = '0';
+  document.getElementById('new-max-par-personne').value = '1';
   lotBase64Pending = null;
   rendreTombola();
 });
