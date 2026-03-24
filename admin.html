@@ -428,11 +428,10 @@ async function verifierMotDePasse() {
   const cfg  = LS.getConfig();
   let hashStocke = cfg.mot_de_passe_admin || '';
 
-  // Première utilisation : aucun hash → initialiser avec "admin1234"
+  // Première utilisation : aucun hash stocké → comparer en texte clair contre "admin1234"
   if (!hashStocke) {
-    const hashDefaut = '3d4f2bf07dc1be38b20cd6e46949a1077f15c7b5b4f9f9eda9efde68d91d1c73';
-    if (hash === hashDefaut) {
-      const newCfg = { ...cfg, mot_de_passe_admin: hashDefaut };
+    if (mdp === 'admin1234') {
+      const newCfg = { ...cfg, mot_de_passe_admin: hash };
       LS.setConfig(newCfg);
       ouvrirSession();
     } else {
